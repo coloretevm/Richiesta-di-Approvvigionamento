@@ -1,5 +1,11 @@
 # Notes
 
+## Version 1.2 - 2026-05-12
+
+- Request numbering is now annual.
+- If the year stored in `richiesta_counter.json` is different from the current year, the next request starts again from `0001`.
+- The counter still advances only after the PDF is generated successfully.
+
 ## Version 1.1 - 2026-05-12
 
 - Added automatic numbering for each `Richiesta di Approvvigionamento`.

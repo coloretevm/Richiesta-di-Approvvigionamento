@@ -17,10 +17,11 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.1"
+APP_VERSION = "1.2"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%Y-%m-%d")
+CURRENT_YEAR = TODAY.year
 COUNTER_FILE = "richiesta_counter.json"
 REQUEST_NUMBER_WIDTH = 4
 FOOTER_TEXT = (
@@ -249,6 +250,13 @@ def load_next_request_number() -> int:
         return 1
 
     try:
+        counter_year = int(data.get("year", CURRENT_YEAR))
+    except (TypeError, ValueError):
+        counter_year = CURRENT_YEAR
+    if counter_year != CURRENT_YEAR:
+        return 1
+
+    try:
         next_number = int(data.get("next_number", 1))
     except (TypeError, ValueError):
         return 1
@@ -257,7 +265,10 @@ def load_next_request_number() -> int:
 
 def save_next_request_number(next_number: int) -> None:
     path = counter_path()
-    data = {"next_number": max(1, int(next_number))}
+    data = {
+        "year": CURRENT_YEAR,
+        "next_number": max(1, int(next_number)),
+    }
     with path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
 

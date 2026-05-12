@@ -43,6 +43,7 @@ dist\MiAppEscritorio.exe
 ## Numeracion
 
 El contador se guarda en `richiesta_counter.json` junto al programa. Si el archivo no existe, la numeracion empieza en `0001`.
+La numeracion es anual: al cambiar de anio, vuelve automaticamente a `0001`.
 El numero solo avanza cuando el PDF se genera correctamente.
 
 ## Archivos principales
