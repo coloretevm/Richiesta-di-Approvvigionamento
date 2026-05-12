@@ -6,4 +6,4 @@ build/
 dist/
 *.spec
 *.pdf
-richiesta_counter.json
+github_token.txt

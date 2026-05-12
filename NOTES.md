@@ -1,5 +1,13 @@
 # Notes
 
+## Version 1.3 - 2026-05-12
+
+- Request numbering now uses GitHub as the single shared source of truth.
+- On startup, the app reads `richiesta_counter.json` from the repository to show the next request number.
+- Before generating a PDF, the app reserves the number by updating `richiesta_counter.json` on GitHub.
+- This prevents two PCs from generating the same request number.
+- A GitHub token with repository write access is required through `RICHIESTA_GITHUB_TOKEN`, `github_token.txt`, or the prompt shown by the app.
+
 ## Version 1.2 - 2026-05-12
 
 - Request numbering is now annual.

@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import sys
 import json
+import os
+import base64
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
+from urllib import error as urlerror
+from urllib import request as urlrequest
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -17,13 +21,22 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.2"
+APP_VERSION = "1.3"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%Y-%m-%d")
 CURRENT_YEAR = TODAY.year
 COUNTER_FILE = "richiesta_counter.json"
 REQUEST_NUMBER_WIDTH = 4
+GITHUB_OWNER = "coloretevm"
+GITHUB_REPO = "Richiesta-di-Approvvigionamento"
+GITHUB_BRANCH = "main"
+GITHUB_TOKEN_ENV = "RICHIESTA_GITHUB_TOKEN"
+GITHUB_TOKEN_FILE = "github_token.txt"
+GITHUB_COUNTER_API_URL = (
+    f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/contents/{COUNTER_FILE}"
+)
+GITHUB_MAX_RESERVE_ATTEMPTS = 5
 FOOTER_TEXT = (
     "SISTEMA GESTIONE INTEGRATO - RICHIESTA DI APPROVVIGIONAMENTO - "
     "Mod. 0804-06 rev.0 del 27/02/2018"
@@ -74,7 +87,8 @@ UI_TEXTS = {
         "language_help": "Elige el idioma de la interfaz. El PDF seguirá manteniendo la estructura del formulario.",
         "language_label": "Idioma",
         "quick_hint": "Cuando termines de rellenar los datos, pulsa el botón para crear el PDF.",
-        "request_number": "Próxima richiesta: N. {number}",
+        "request_number": "Próxima richiesta GitHub: N. {number}",
+        "request_number_error": "Próxima richiesta GitHub: no disponible",
         "generate_pdf": "Generar PDF",
         "reset_form": "Limpiar formulario",
         "section_top": "Parte superior",
@@ -109,7 +123,10 @@ UI_TEXTS = {
         "save_pdf_title": "Guardar PDF",
         "pdf_ok": "PDF generado correctamente.\n\n{path}",
         "pdf_error": "No se pudo generar el PDF.\n\n{error}",
-        "counter_warning": "El PDF fue generado, pero no se pudo actualizar el contador.\n\n{error}",
+        "github_token_title": "Token GitHub",
+        "github_token_prompt": "Introduce el token de GitHub para reservar el número de richiesta:",
+        "github_counter_error": "No se pudo reservar el número en GitHub.\n\n{error}",
+        "github_reserving": "Reservando número de richiesta en GitHub...",
         "columns": ["Descripción", "Cant.", "Entrega requerida", "Orden n. del"],
     },
     "it": {
@@ -122,7 +139,8 @@ UI_TEXTS = {
         "language_help": "Scegli la lingua dell'interfaccia. Il PDF manterrà la struttura del modulo.",
         "language_label": "Lingua",
         "quick_hint": "Quando hai finito di compilare i dati, premi il pulsante per creare il PDF.",
-        "request_number": "Prossima richiesta: N. {number}",
+        "request_number": "Prossima richiesta GitHub: N. {number}",
+        "request_number_error": "Prossima richiesta GitHub: non disponibile",
         "generate_pdf": "Genera PDF",
         "reset_form": "Pulisci modulo",
         "section_top": "Parte superiore",
@@ -157,7 +175,10 @@ UI_TEXTS = {
         "save_pdf_title": "Salva PDF",
         "pdf_ok": "PDF generato correttamente.\n\n{path}",
         "pdf_error": "Impossibile generare il PDF.\n\n{error}",
-        "counter_warning": "Il PDF è stato generato, ma non è stato possibile aggiornare il contatore.\n\n{error}",
+        "github_token_title": "Token GitHub",
+        "github_token_prompt": "Inserisci il token GitHub per prenotare il numero richiesta:",
+        "github_counter_error": "Impossibile prenotare il numero su GitHub.\n\n{error}",
+        "github_reserving": "Prenotazione del numero richiesta su GitHub...",
         "columns": ["Descrizione", "Q.t.", "Consegna richiesta", "Ordine n. del"],
     },
     "en": {
@@ -170,7 +191,8 @@ UI_TEXTS = {
         "language_help": "Choose the interface language. The PDF will still keep the form structure.",
         "language_label": "Language",
         "quick_hint": "When you finish entering the data, press the button to create the PDF.",
-        "request_number": "Next request: No. {number}",
+        "request_number": "Next GitHub request: No. {number}",
+        "request_number_error": "Next GitHub request: unavailable",
         "generate_pdf": "Generate PDF",
         "reset_form": "Clear form",
         "section_top": "Top section",
@@ -205,7 +227,10 @@ UI_TEXTS = {
         "save_pdf_title": "Save PDF",
         "pdf_ok": "PDF generated successfully.\n\n{path}",
         "pdf_error": "Could not generate the PDF.\n\n{error}",
-        "counter_warning": "The PDF was generated, but the counter could not be updated.\n\n{error}",
+        "github_token_title": "GitHub token",
+        "github_token_prompt": "Enter the GitHub token to reserve the request number:",
+        "github_counter_error": "Could not reserve the request number on GitHub.\n\n{error}",
+        "github_reserving": "Reserving request number on GitHub...",
         "columns": ["Description", "Qty.", "Requested delivery", "Order no. / date"],
     },
 }
@@ -230,53 +255,166 @@ def runtime_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
-def counter_path() -> Path:
-    return runtime_dir() / COUNTER_FILE
-
-
 def format_request_number(number: int) -> str:
     return f"{max(1, number):0{REQUEST_NUMBER_WIDTH}d}"
 
 
-def load_next_request_number() -> int:
-    path = counter_path()
-    if not path.exists():
-        return 1
+def default_counter_data() -> dict[str, object]:
+    return {
+        "year": CURRENT_YEAR,
+        "next_number": 1,
+        "updated_at": "",
+        "updated_by": "",
+    }
 
-    try:
-        with path.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-    except (OSError, json.JSONDecodeError):
-        return 1
 
+def normalize_counter_data(data: object) -> dict[str, object]:
+    counter = default_counter_data()
+    if not isinstance(data, dict):
+        return counter
     try:
         counter_year = int(data.get("year", CURRENT_YEAR))
     except (TypeError, ValueError):
         counter_year = CURRENT_YEAR
     if counter_year != CURRENT_YEAR:
-        return 1
+        return counter
 
     try:
         next_number = int(data.get("next_number", 1))
     except (TypeError, ValueError):
-        return 1
-    return max(1, next_number)
+        next_number = 1
+
+    counter["year"] = CURRENT_YEAR
+    counter["next_number"] = max(1, next_number)
+    counter["updated_at"] = str(data.get("updated_at", "") or "")
+    counter["updated_by"] = str(data.get("updated_by", "") or "")
+    return counter
 
 
-def save_next_request_number(next_number: int) -> None:
-    path = counter_path()
-    data = {
-        "year": CURRENT_YEAR,
-        "next_number": max(1, int(next_number)),
+def load_github_token() -> str:
+    env_token = os.environ.get(GITHUB_TOKEN_ENV, "").strip()
+    if env_token:
+        return env_token
+
+    token_path = runtime_dir() / GITHUB_TOKEN_FILE
+    try:
+        if token_path.is_file():
+            return token_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+    return ""
+
+
+def github_headers(token: str = "") -> dict[str, str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "Richiesta-di-Approvvigionamento",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
-    with path.open("w", encoding="utf-8") as file:
-        json.dump(data, file, indent=2)
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
 
 
-def advance_request_counter(used_number: int) -> None:
-    current_number = load_next_request_number()
-    if current_number <= used_number:
-        save_next_request_number(used_number + 1)
+def github_error_detail(exc: urlerror.HTTPError) -> str:
+    try:
+        payload = exc.read().decode("utf-8", errors="replace")
+        data = json.loads(payload)
+        message = str(data.get("message", "")).strip()
+        if message:
+            return f"GitHub HTTP {exc.code}: {message}"
+    except Exception:
+        pass
+    return f"GitHub HTTP {exc.code}: {exc.reason}"
+
+
+def github_request_json(
+    url: str,
+    *,
+    token: str = "",
+    data: dict[str, object] | None = None,
+    method: str | None = None,
+) -> dict[str, object]:
+    body = None
+    headers = github_headers(token)
+    if data is not None:
+        body = json.dumps(data).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+    request = urlrequest.Request(
+        url,
+        data=body,
+        headers=headers,
+        method=method,
+    )
+    try:
+        with urlrequest.urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8")
+    except urlerror.HTTPError:
+        raise
+    except urlerror.URLError as exc:
+        raise RuntimeError(f"No se pudo conectar con GitHub: {exc.reason}") from exc
+    return json.loads(raw) if raw else {}
+
+
+def fetch_github_counter(token: str = "") -> tuple[dict[str, object], str | None]:
+    url = f"{GITHUB_COUNTER_API_URL}?ref={GITHUB_BRANCH}"
+    try:
+        data = github_request_json(url, token=token)
+    except urlerror.HTTPError as exc:
+        if exc.code == 404:
+            return default_counter_data(), None
+        raise RuntimeError(github_error_detail(exc)) from exc
+
+    content = str(data.get("content", "") or "")
+    sha = str(data.get("sha", "") or "") or None
+    try:
+        decoded = base64.b64decode(content).decode("utf-8")
+        counter_data = json.loads(decoded)
+    except Exception:
+        counter_data = {}
+    return normalize_counter_data(counter_data), sha
+
+
+def load_next_request_number() -> int:
+    counter, _sha = fetch_github_counter()
+    return int(counter.get("next_number", 1) or 1)
+
+
+def save_github_counter(counter: dict[str, object], sha: str | None, token: str) -> None:
+    content = json.dumps(counter, indent=2, ensure_ascii=False) + "\n"
+    payload: dict[str, object] = {
+        "message": f"Reserve richiesta {counter.get('year')} N. {format_request_number(int(counter.get('next_number', 1)) - 1)}",
+        "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
+        "branch": GITHUB_BRANCH,
+    }
+    if sha:
+        payload["sha"] = sha
+    try:
+        github_request_json(GITHUB_COUNTER_API_URL, token=token, data=payload, method="PUT")
+    except urlerror.HTTPError as exc:
+        raise RuntimeError(github_error_detail(exc)) from exc
+
+
+def reserve_next_request_number(token: str) -> int:
+    if not token:
+        raise RuntimeError("GitHub token mancante.")
+
+    for _attempt in range(GITHUB_MAX_RESERVE_ATTEMPTS):
+        counter, sha = fetch_github_counter(token)
+        reserved_number = int(counter.get("next_number", 1) or 1)
+        next_counter = dict(counter)
+        next_counter["year"] = CURRENT_YEAR
+        next_counter["next_number"] = reserved_number + 1
+        next_counter["updated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+        next_counter["updated_by"] = os.environ.get("COMPUTERNAME", "").strip() or os.environ.get("USERNAME", "").strip()
+        try:
+            save_github_counter(next_counter, sha, token)
+            return reserved_number
+        except RuntimeError as exc:
+            if "GitHub HTTP 409" in str(exc):
+                continue
+            raise
+    raise RuntimeError("GitHub ha ricevuto aggiornamenti simultanei. Riprova tra qualche secondo.")
 
 
 def default_pdf_filename(request_number: int) -> str:
@@ -716,8 +854,23 @@ class ProcurementApp:
             self.status_var.set(self.t("status_ready"))
 
     def _refresh_request_number_label(self) -> None:
-        number = format_request_number(load_next_request_number())
-        self.request_number_var.set(self.t("request_number", number=number))
+        try:
+            number = format_request_number(load_next_request_number())
+            self.request_number_var.set(self.t("request_number", number=number))
+        except Exception:
+            self.request_number_var.set(self.t("request_number_error"))
+
+    def _get_github_token(self) -> str:
+        token = load_github_token()
+        if token:
+            return token
+        token = simpledialog.askstring(
+            self.t("github_token_title"),
+            self.t("github_token_prompt"),
+            parent=self.root,
+            show="*",
+        )
+        return (token or "").strip()
 
     def _refresh_dynamic_fields(self) -> None:
         main_needs_text = self.main_option_var.get() in {"commessa", "altro"}
@@ -821,8 +974,14 @@ class ProcurementApp:
         if not self.validate_form():
             return
 
-        request_number = load_next_request_number()
-        default_name = default_pdf_filename(request_number)
+        try:
+            preview_number = load_next_request_number()
+        except Exception as exc:
+            messagebox.showerror(self.t("app_title"), self.t("github_counter_error", error=exc))
+            self._refresh_request_number_label()
+            return
+
+        default_name = default_pdf_filename(preview_number)
         output_path = filedialog.asksaveasfilename(
             title=self.t("save_pdf_title"),
             defaultextension=".pdf",
@@ -832,6 +991,20 @@ class ProcurementApp:
         if not output_path:
             return
 
+        token = self._get_github_token()
+        if not token:
+            return
+
+        self.status_var.set(self.t("github_reserving"))
+        self.root.update_idletasks()
+        try:
+            request_number = reserve_next_request_number(token)
+        except Exception as exc:
+            messagebox.showerror(self.t("app_title"), self.t("github_counter_error", error=exc))
+            self._refresh_request_number_label()
+            return
+
+        output_path = str(Path(output_path).with_name(default_pdf_filename(request_number)))
         try:
             generate_procurement_pdf(
                 output_path=Path(output_path),
@@ -844,12 +1017,9 @@ class ProcurementApp:
             )
         except Exception as exc:
             messagebox.showerror(self.t("app_title"), self.t("pdf_error", error=exc))
+            self._refresh_request_number_label()
             return
 
-        try:
-            advance_request_counter(request_number)
-        except Exception as exc:
-            messagebox.showwarning(self.t("app_title"), self.t("counter_warning", error=exc))
         self._refresh_request_number_label()
         self.status_var.set(self.t("status_pdf_generated", path=output_path))
         messagebox.showinfo(self.t("app_title"), self.t("pdf_ok", path=output_path))
