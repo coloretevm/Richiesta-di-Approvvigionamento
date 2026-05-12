@@ -21,7 +21,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.3"
+APP_VERSION = "1.4"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%Y-%m-%d")

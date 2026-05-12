@@ -1,5 +1,12 @@
 # Notes
 
+## Version 1.4 - 2026-05-12
+
+- Published the GitHub-shared request counter build as v1.4.
+- The visible request label now stays simple: `Richiesta: N. 0001`.
+- The GitHub counter remains the single shared source for all PCs.
+- The Windows executable is published as `dist/Richiesta di approvvigionamento v1.4.exe`.
+
 ## Version 1.3 - 2026-05-12
 
 - Request numbering now uses GitHub as the single shared source of truth.
