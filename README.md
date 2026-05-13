@@ -38,7 +38,7 @@ dist\MiAppEscritorio.exe
 - Coloca automaticamente la fecha de hoy
 - Marca siempre `Spedizione a: Tecnidro`
 - Marca siempre `Richiedente: Altro Ente` con `Rodriguez Manuel Mateo`
-- Inserta la firma y genera el PDF con nombre `Richiesta di approvvigionamento N. 0001 - YYYY-MM-DD.pdf`
+- Inserta la firma y genera el PDF con nombre `Richiesta di approvvigionamento N. 0001 - DD-MM-YYYY.pdf`
 
 ## Numeracion
 

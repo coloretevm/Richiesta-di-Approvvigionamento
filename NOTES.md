@@ -6,6 +6,7 @@
 - The app now reads the token from an embedded `github_token.txt`, `RICHIESTA_GITHUB_TOKEN`, or `github_token.txt` next to the executable.
 - The build script automatically embeds `github_token.txt` when that file exists during compilation.
 - If no token is available, the app shows an error and does not ask the user to type anything.
+- PDF filenames now use day-month-year dates, for example `13-05-2026`.
 
 ## Version 1.4 - 2026-05-12
 
@@ -32,7 +33,7 @@
 
 - Added automatic numbering for each `Richiesta di Approvvigionamento`.
 - The generated PDF filename now includes the request number, for example:
-  `Richiesta di approvvigionamento N. 0001 - 2026-05-12.pdf`.
+  `Richiesta di approvvigionamento N. 0001 - 13-05-2026.pdf`.
 - The request number is printed inside the PDF header as `N. 0001`.
 - The app shows the next request number in the main toolbar.
 - The counter is stored locally in `richiesta_counter.json` next to the program.
