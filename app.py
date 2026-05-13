@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, ttk
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
@@ -21,7 +21,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.4"
+APP_VERSION = "1.5"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%Y-%m-%d")
@@ -123,8 +123,7 @@ UI_TEXTS = {
         "save_pdf_title": "Guardar PDF",
         "pdf_ok": "PDF generado correctamente.\n\n{path}",
         "pdf_error": "No se pudo generar el PDF.\n\n{error}",
-        "github_token_title": "Token GitHub",
-        "github_token_prompt": "Introduce el token de GitHub para reservar el número de richiesta:",
+        "github_token_missing": "Falta el token de GitHub. Coloca `github_token.txt` junto al .exe o configura la variable `RICHIESTA_GITHUB_TOKEN`.",
         "github_counter_error": "No se pudo reservar el número en GitHub.\n\n{error}",
         "github_reserving": "Reservando número de richiesta en GitHub...",
         "columns": ["Descripción", "Cant.", "Entrega requerida", "Orden n. del"],
@@ -175,8 +174,7 @@ UI_TEXTS = {
         "save_pdf_title": "Salva PDF",
         "pdf_ok": "PDF generato correttamente.\n\n{path}",
         "pdf_error": "Impossibile generare il PDF.\n\n{error}",
-        "github_token_title": "Token GitHub",
-        "github_token_prompt": "Inserisci il token GitHub per prenotare il numero richiesta:",
+        "github_token_missing": "Token GitHub mancante. Metti `github_token.txt` accanto al .exe oppure configura la variabile `RICHIESTA_GITHUB_TOKEN`.",
         "github_counter_error": "Impossibile prenotare il numero su GitHub.\n\n{error}",
         "github_reserving": "Prenotazione del numero richiesta su GitHub...",
         "columns": ["Descrizione", "Q.t.", "Consegna richiesta", "Ordine n. del"],
@@ -227,8 +225,7 @@ UI_TEXTS = {
         "save_pdf_title": "Save PDF",
         "pdf_ok": "PDF generated successfully.\n\n{path}",
         "pdf_error": "Could not generate the PDF.\n\n{error}",
-        "github_token_title": "GitHub token",
-        "github_token_prompt": "Enter the GitHub token to reserve the request number:",
+        "github_token_missing": "Missing GitHub token. Put `github_token.txt` next to the .exe or configure `RICHIESTA_GITHUB_TOKEN`.",
         "github_counter_error": "Could not reserve the request number on GitHub.\n\n{error}",
         "github_reserving": "Reserving request number on GitHub...",
         "columns": ["Description", "Qty.", "Requested delivery", "Order no. / date"],
@@ -296,12 +293,18 @@ def load_github_token() -> str:
     if env_token:
         return env_token
 
-    token_path = runtime_dir() / GITHUB_TOKEN_FILE
-    try:
-        if token_path.is_file():
-            return token_path.read_text(encoding="utf-8").strip()
-    except OSError:
-        return ""
+    token_paths = [
+        resource_path(GITHUB_TOKEN_FILE),
+        runtime_dir() / GITHUB_TOKEN_FILE,
+    ]
+    for token_path in token_paths:
+        try:
+            if token_path.is_file():
+                token = token_path.read_text(encoding="utf-8").strip()
+                if token:
+                    return token
+        except OSError:
+            continue
     return ""
 
 
@@ -861,16 +864,7 @@ class ProcurementApp:
             self.request_number_var.set(self.t("request_number_error"))
 
     def _get_github_token(self) -> str:
-        token = load_github_token()
-        if token:
-            return token
-        token = simpledialog.askstring(
-            self.t("github_token_title"),
-            self.t("github_token_prompt"),
-            parent=self.root,
-            show="*",
-        )
-        return (token or "").strip()
+        return load_github_token()
 
     def _refresh_dynamic_fields(self) -> None:
         main_needs_text = self.main_option_var.get() in {"commessa", "altro"}
@@ -993,6 +987,7 @@ class ProcurementApp:
 
         token = self._get_github_token()
         if not token:
+            messagebox.showerror(self.t("app_title"), self.t("github_token_missing"))
             return
 
         self.status_var.set(self.t("github_reserving"))

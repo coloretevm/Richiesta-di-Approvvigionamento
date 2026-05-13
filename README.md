@@ -46,7 +46,7 @@ El contador se guarda en GitHub en `richiesta_counter.json`. El programa consult
 La numeracion es anual: al cambiar de anio, vuelve automaticamente a `0001`.
 El numero reservado en GitHub se usa dentro del PDF y tambien en el nombre final del archivo.
 
-Para actualizar el contador desde cualquier PC, el programa necesita un token GitHub con permiso de escritura sobre el repositorio. Puede leerse desde la variable de entorno `RICHIESTA_GITHUB_TOKEN`, desde un archivo local `github_token.txt` junto al `.exe`, o introducirse cuando el programa lo pida.
+Para actualizar el contador desde cualquier PC, el programa necesita un token GitHub con permiso de escritura sobre el repositorio. El token puede ir embebido dentro del `.exe` si existe `github_token.txt` al compilar. Como respaldo, tambien puede leerse desde la variable de entorno `RICHIESTA_GITHUB_TOKEN` o desde un archivo local `github_token.txt` junto al `.exe`. El programa no pide el token por pantalla.
 
 ## Archivos principales
 

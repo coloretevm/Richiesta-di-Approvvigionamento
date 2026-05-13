@@ -1,5 +1,12 @@
 # Notes
 
+## Version 1.5 - 2026-05-13
+
+- Removed the GitHub token prompt from the app.
+- The app now reads the token from an embedded `github_token.txt`, `RICHIESTA_GITHUB_TOKEN`, or `github_token.txt` next to the executable.
+- The build script automatically embeds `github_token.txt` when that file exists during compilation.
+- If no token is available, the app shows an error and does not ask the user to type anything.
+
 ## Version 1.4 - 2026-05-12
 
 - Published the GitHub-shared request counter build as v1.4.
@@ -13,7 +20,7 @@
 - On startup, the app reads `richiesta_counter.json` from the repository to show the next request number.
 - Before generating a PDF, the app reserves the number by updating `richiesta_counter.json` on GitHub.
 - This prevents two PCs from generating the same request number.
-- A GitHub token with repository write access is required through `RICHIESTA_GITHUB_TOKEN`, `github_token.txt`, or the prompt shown by the app.
+- A GitHub token with repository write access is required through `RICHIESTA_GITHUB_TOKEN` or `github_token.txt`.
 
 ## Version 1.2 - 2026-05-12
 
