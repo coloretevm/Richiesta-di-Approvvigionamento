@@ -21,7 +21,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.5"
+APP_VERSION = "1.6"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -38,8 +38,7 @@ GITHUB_COUNTER_API_URL = (
 )
 GITHUB_MAX_RESERVE_ATTEMPTS = 5
 FOOTER_TEXT = (
-    "SISTEMA GESTIONE INTEGRATO - RICHIESTA DI APPROVVIGIONAMENTO - "
-    "Mod. 0804-06 rev.0 del 27/02/2018"
+    "SISTEMA GESTIONE INTEGRATO - RICHIESTA DI APPROVVIGIONAMENTO"
 )
 ACCENT_COLOR = colors.HexColor("#0e3f86")
 TEXT_COLOR = colors.HexColor("#1a1a1a")
@@ -1171,7 +1170,6 @@ def generate_procurement_pdf(
         pdf.setFillColor(MUTED_TEXT)
         pdf.setFont("Helvetica", 9)
         pdf.drawString(left + 52 * mm, header_bottom + 12.5 * mm, "Sistema Gestione Integrato")
-        pdf.drawRightString(right - 4 * mm, header_bottom + 12.5 * mm, "Mod. 0804-06 rev.0")
         pdf.setStrokeColor(LINE_COLOR)
         pdf.line(left + 52 * mm, header_bottom + 10 * mm, right - 4 * mm, header_bottom + 10 * mm)
         pdf.setFillColor(MUTED_TEXT)

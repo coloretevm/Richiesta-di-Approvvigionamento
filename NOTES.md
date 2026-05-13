@@ -1,5 +1,11 @@
 # Notes
 
+## Version 1.6 - 2026-05-13
+
+- Reset the shared request counter to `0001`.
+- Removed `Mod. 0804-06 rev.0` from the PDF header.
+- Removed `Mod. 0804-06 rev.0 del 27/02/2018` from the PDF footer.
+
 ## Version 1.5 - 2026-05-13
 
 - Removed the GitHub token prompt from the app.
