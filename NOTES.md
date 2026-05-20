@@ -1,5 +1,10 @@
 # Notes
 
+## Version 1.8 - 2026-05-20
+
+- Moved the password-protected request number editor into the `Language` tab.
+- Removed the request number editor from the main form page.
+
 ## Version 1.7 - 2026-05-20
 
 - Added a password-protected button to manually set the next richiesta number in GitHub.

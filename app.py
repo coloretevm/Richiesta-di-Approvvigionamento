@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.7"
+APP_VERSION = "1.8"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -816,13 +816,6 @@ class ProcurementApp:
         actions.pack(fill="x", pady=(12, 0))
         self.reset_button_bottom = ttk.Button(actions, text=self.t("reset_form"), command=self.reset_form)
         self.reset_button_bottom.pack(side="right")
-        self.counter_admin_button = ttk.Button(
-            actions,
-            text=self.t("counter_admin_button"),
-            command=self.change_request_number,
-            style="Secondary.TButton",
-        )
-        self.counter_admin_button.pack(side="right", padx=(0, 8))
 
         self.status_label = ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel")
         self.status_label.pack(anchor="w", pady=(10, 0))
@@ -853,6 +846,16 @@ class ProcurementApp:
         self.language_combo.current(list(UI_LANGUAGES).index(self.language_var.get()))
         self.language_combo.bind("<<ComboboxSelected>>", self._on_language_change)
         self.language_combo.pack(side="left", padx=(12, 0))
+
+        admin_row = ttk.Frame(card, style="Card.TFrame")
+        admin_row.pack(fill="x", pady=(22, 0))
+        self.counter_admin_button = ttk.Button(
+            admin_row,
+            text=self.t("counter_admin_button"),
+            command=self.change_request_number,
+            style="Secondary.TButton",
+        )
+        self.counter_admin_button.pack(side="left")
 
     def _on_language_change(self, _event=None) -> None:
         selected_label = self.language_combo.get()
