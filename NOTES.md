@@ -1,5 +1,10 @@
 # Notes
 
+## Version 1.12 - 2026-05-20
+
+- Changed the application header to a white integrated layout so the Tecnidro logo blends naturally.
+- Kept the professional light interface with blue identity text and green PDF action.
+
 ## Version 1.11 - 2026-05-20
 
 - Updated the desktop frontend to the selected clean enterprise layout.

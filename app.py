@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.11"
+APP_VERSION = "1.12"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -596,7 +596,7 @@ class ProcurementApp:
         success_hover = "#19733f"
         border = "#cfd8e3"
         field = "#ffffff"
-        header = "#08366f"
+        header = "#ffffff"
 
         style.configure(".", background=bg, foreground=text)
         style.configure("TFrame", background=bg)
@@ -609,10 +609,10 @@ class ProcurementApp:
         style.configure("Card.TLabel", background=panel, foreground=text)
         style.configure("SectionTitle.TLabel", background=panel, foreground=accent)
         style.configure("Toolbar.TLabel", background=panel_alt, foreground=text)
-        style.configure("HeaderTitle.TLabel", background=header, foreground="white")
-        style.configure("HeaderMuted.TLabel", background=header, foreground="#d7e4f5")
-        style.configure("HeaderRequest.TLabel", background=header, foreground="#ffffff")
-        style.configure("HeaderLogo.TLabel", background="#ffffff", foreground=accent, padding=(10, 6))
+        style.configure("HeaderTitle.TLabel", background=header, foreground=accent)
+        style.configure("HeaderMuted.TLabel", background=header, foreground=muted)
+        style.configure("HeaderRequest.TLabel", background=header, foreground=accent)
+        style.configure("HeaderLogo.TLabel", background=header, foreground=accent, padding=(0, 0))
         style.configure("TLabelframe", background=panel, foreground=text, bordercolor=border, relief="solid")
         style.configure("TLabelframe.Label", background=panel, foreground=accent, font=("Segoe UI", 10, "bold"))
         style.configure("TButton", background=accent, foreground="white", borderwidth=0, focusthickness=0, padding=(12, 8))
@@ -621,8 +621,8 @@ class ProcurementApp:
         style.map("Primary.TButton", background=[("active", success_hover)])
         style.configure("Secondary.TButton", background="#e8edf3", foreground=text, borderwidth=1, bordercolor=border, padding=(12, 8))
         style.map("Secondary.TButton", background=[("active", "#dde5ee")])
-        style.configure("HeaderSecondary.TButton", background="#174d8d", foreground="white", borderwidth=0, padding=(12, 8))
-        style.map("HeaderSecondary.TButton", background=[("active", "#1d5aa3")])
+        style.configure("HeaderSecondary.TButton", background="#e8eef6", foreground=accent, borderwidth=1, bordercolor=border, padding=(12, 8))
+        style.map("HeaderSecondary.TButton", background=[("active", "#dbe6f2")])
         style.configure("TEntry", fieldbackground=field, foreground=text, insertcolor=text, bordercolor=border, lightcolor=border, darkcolor=border)
         style.configure("TCombobox", fieldbackground=field, background=field, foreground=text, arrowcolor=accent, bordercolor=border)
         style.map("TCombobox", fieldbackground=[("readonly", field)], foreground=[("readonly", text)])
@@ -697,6 +697,8 @@ class ProcurementApp:
             font=("Segoe UI", 10, "bold"),
         )
         self.request_number_label.pack(anchor="e", pady=(7, 0))
+
+        ttk.Separator(container, orient="horizontal").pack(fill="x")
 
         body = ttk.Frame(container, padding=(16, 14, 16, 16), style="TFrame")
         body.pack(fill="both", expand=True)
