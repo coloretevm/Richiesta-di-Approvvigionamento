@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.8"
+APP_VERSION = "1.9"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -911,9 +911,14 @@ class ProcurementApp:
     def _refresh_request_number_label(self) -> None:
         try:
             number = format_request_number(load_next_request_number())
-            self.request_number_var.set(self.t("request_number", number=number))
+            self._set_request_number_label(number)
         except Exception:
             self.request_number_var.set(self.t("request_number_error"))
+
+    def _set_request_number_label(self, number: int | str) -> None:
+        if isinstance(number, int):
+            number = format_request_number(number)
+        self.request_number_var.set(self.t("request_number", number=number))
 
     def _get_github_token(self) -> str:
         return load_github_token()
@@ -963,8 +968,8 @@ class ProcurementApp:
             self._refresh_request_number_label()
             return
 
-        self._refresh_request_number_label()
         number_text = format_request_number(next_number)
+        self._set_request_number_label(number_text)
         self.status_var.set(self.t("counter_update_ok", number=number_text))
         messagebox.showinfo(self.t("app_title"), self.t("counter_update_ok", number=number_text))
 
@@ -1114,10 +1119,10 @@ class ProcurementApp:
             )
         except Exception as exc:
             messagebox.showerror(self.t("app_title"), self.t("pdf_error", error=exc))
-            self._refresh_request_number_label()
+            self._set_request_number_label(request_number + 1)
             return
 
-        self._refresh_request_number_label()
+        self._set_request_number_label(request_number + 1)
         self.status_var.set(self.t("status_pdf_generated", path=output_path))
         messagebox.showinfo(self.t("app_title"), self.t("pdf_ok", path=output_path))
 

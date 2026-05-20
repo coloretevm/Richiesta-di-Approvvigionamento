@@ -1,5 +1,10 @@
 # Notes
 
+## Version 1.9 - 2026-05-20
+
+- After generating a richiesta, the visible request number now updates immediately to the next number.
+- The UI no longer waits for a fresh GitHub read after a successful reservation.
+
 ## Version 1.8 - 2026-05-20
 
 - Moved the password-protected request number editor into the `Language` tab.
