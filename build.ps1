@@ -55,7 +55,7 @@ if (Test-Path "github_token.txt") {
 }
 
 Write-Host "Generando el .exe..." -ForegroundColor Cyan
-python -m PyInstaller --noconfirm --onefile --windowed @addDataArgs --name "Richiesta_di_approvvigionamento" app.py
+python -m PyInstaller --noconfirm --onefile --windowed @addDataArgs --icon "assets\app_icon.ico" --name "Richiesta_di_approvvigionamento" app.py
 Assert-Success "generar el ejecutable"
 
 Write-Host "Compilacion completada. Revisa dist\Richiesta_di_approvvigionamento.exe" -ForegroundColor Green

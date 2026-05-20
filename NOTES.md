@@ -1,5 +1,9 @@
 # Notes
 
+## Version 1.10 - 2026-05-20
+
+- Added the selected document/request icon to the app window and Windows executable.
+
 ## Version 1.9 - 2026-05-20
 
 - After generating a richiesta, the visible request number now updates immediately to the next number.

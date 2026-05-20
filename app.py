@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.9"
+APP_VERSION = "1.10"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -548,6 +548,7 @@ class ProcurementApp:
         self.root = root
         self.language_var = tk.StringVar(value="it")
         self.root.title(self.t("app_title"))
+        self._set_window_icon()
         self.root.geometry("1040x760")
         self.root.minsize(980, 700)
         self.root.configure(bg="#11151c")
@@ -569,6 +570,12 @@ class ProcurementApp:
         self._refresh_request_number_label()
         self._refresh_dynamic_fields()
         self.root.bind("<Control-g>", lambda event: self.generate_pdf())
+
+    def _set_window_icon(self) -> None:
+        try:
+            self.root.iconbitmap(default=str(resource_path("assets/app_icon.ico")))
+        except Exception:
+            pass
 
     def t(self, key: str, **kwargs) -> str:
         text = UI_TEXTS[self.language_var.get()][key]
