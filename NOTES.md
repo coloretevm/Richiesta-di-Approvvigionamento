@@ -1,5 +1,10 @@
 # Notes
 
+## Version 1.11 - 2026-05-20
+
+- Updated the desktop frontend to the selected clean enterprise layout.
+- Added a navy header with the Tecnidro logo, clearer light sections, and a green primary PDF action.
+
 ## Version 1.10 - 2026-05-20
 
 - Added the selected document/request icon to the app window and Windows executable.

@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.10"
+APP_VERSION = "1.11"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -551,7 +551,7 @@ class ProcurementApp:
         self._set_window_icon()
         self.root.geometry("1040x760")
         self.root.minsize(980, 700)
-        self.root.configure(bg="#11151c")
+        self.root.configure(bg="#eef2f7")
 
         self.main_option_var = tk.StringVar(value="commessa")
         self.main_option_text_var = tk.StringVar()
@@ -585,104 +585,126 @@ class ProcurementApp:
         style = ttk.Style()
         style.theme_use("clam")
 
-        bg = "#11151c"
-        panel = "#171c24"
-        panel_alt = "#1d2430"
-        text = "#f2f5f9"
-        muted = "#a9b4c2"
-        accent = "#244f95"
-        border = "#2d3644"
-        field = "#0f141b"
+        bg = "#eef2f7"
+        panel = "#ffffff"
+        panel_alt = "#f6f8fb"
+        text = "#1f2937"
+        muted = "#667085"
+        accent = "#0b3f7f"
+        accent_hover = "#0a3670"
+        success = "#1f8a4c"
+        success_hover = "#19733f"
+        border = "#cfd8e3"
+        field = "#ffffff"
+        header = "#08366f"
 
         style.configure(".", background=bg, foreground=text)
         style.configure("TFrame", background=bg)
         style.configure("Card.TFrame", background=panel)
         style.configure("Inner.TFrame", background=panel_alt)
         style.configure("Toolbar.TFrame", background=panel_alt)
+        style.configure("Header.TFrame", background=header)
         style.configure("TLabel", background=bg, foreground=text)
         style.configure("Muted.TLabel", background=bg, foreground=muted)
         style.configure("Card.TLabel", background=panel, foreground=text)
+        style.configure("SectionTitle.TLabel", background=panel, foreground=accent)
         style.configure("Toolbar.TLabel", background=panel_alt, foreground=text)
-        style.configure("TLabelframe", background=panel, foreground=text, bordercolor=border)
-        style.configure("TLabelframe.Label", background=panel, foreground=text)
+        style.configure("HeaderTitle.TLabel", background=header, foreground="white")
+        style.configure("HeaderMuted.TLabel", background=header, foreground="#d7e4f5")
+        style.configure("HeaderRequest.TLabel", background=header, foreground="#ffffff")
+        style.configure("HeaderLogo.TLabel", background="#ffffff", foreground=accent, padding=(10, 6))
+        style.configure("TLabelframe", background=panel, foreground=text, bordercolor=border, relief="solid")
+        style.configure("TLabelframe.Label", background=panel, foreground=accent, font=("Segoe UI", 10, "bold"))
         style.configure("TButton", background=accent, foreground="white", borderwidth=0, focusthickness=0, padding=(12, 8))
-        style.map("TButton", background=[("active", "#2b5fb3")])
-        style.configure("Primary.TButton", background="#3d7cff", foreground="white", borderwidth=0, padding=(16, 10))
-        style.map("Primary.TButton", background=[("active", "#5b92ff")])
-        style.configure("Secondary.TButton", background=panel_alt, foreground=text, borderwidth=1, bordercolor=border, padding=(12, 8))
-        style.map("Secondary.TButton", background=[("active", "#273244")])
-        style.configure("TEntry", fieldbackground=field, foreground=text, insertcolor=text, bordercolor=border)
-        style.configure("TCombobox", fieldbackground=field, background=field, foreground=text, arrowcolor=text)
+        style.map("TButton", background=[("active", accent_hover)])
+        style.configure("Primary.TButton", background=success, foreground="white", borderwidth=0, padding=(18, 11), font=("Segoe UI", 10, "bold"))
+        style.map("Primary.TButton", background=[("active", success_hover)])
+        style.configure("Secondary.TButton", background="#e8edf3", foreground=text, borderwidth=1, bordercolor=border, padding=(12, 8))
+        style.map("Secondary.TButton", background=[("active", "#dde5ee")])
+        style.configure("HeaderSecondary.TButton", background="#174d8d", foreground="white", borderwidth=0, padding=(12, 8))
+        style.map("HeaderSecondary.TButton", background=[("active", "#1d5aa3")])
+        style.configure("TEntry", fieldbackground=field, foreground=text, insertcolor=text, bordercolor=border, lightcolor=border, darkcolor=border)
+        style.configure("TCombobox", fieldbackground=field, background=field, foreground=text, arrowcolor=accent, bordercolor=border)
         style.map("TCombobox", fieldbackground=[("readonly", field)], foreground=[("readonly", text)])
         style.configure("TRadiobutton", background=panel, foreground=text)
         style.configure("TCheckbutton", background=panel, foreground=text)
-        style.configure("Treeview", background=field, fieldbackground=field, foreground=text, bordercolor=border, rowheight=30)
-        style.configure("Treeview.Heading", background=panel_alt, foreground=text, relief="flat")
-        style.map("Treeview", background=[("selected", "#2b5fb3")], foreground=[("selected", "white")])
+        style.map("TRadiobutton", background=[("active", panel)], foreground=[("active", text)])
+        style.map("TCheckbutton", background=[("active", panel)], foreground=[("active", text)])
+        style.configure("Treeview", background=field, fieldbackground=field, foreground=text, bordercolor=border, rowheight=31)
+        style.configure("Treeview.Heading", background="#e8eef6", foreground=accent, relief="flat", font=("Segoe UI", 10, "bold"))
+        style.map("Treeview", background=[("selected", "#d7e8fb")], foreground=[("selected", "#102a43")])
         style.configure("TNotebook", background=bg, borderwidth=0)
-        style.configure("TNotebook.Tab", background=panel, foreground=muted, padding=(14, 8))
-        style.map("TNotebook.Tab", background=[("selected", accent)], foreground=[("selected", "white")])
+        style.configure("TNotebook.Tab", background="#dfe7f1", foreground=muted, padding=(16, 9), borderwidth=0)
+        style.map("TNotebook.Tab", background=[("selected", panel)], foreground=[("selected", accent)])
 
     def _build_ui(self) -> None:
-        container = ttk.Frame(self.root, padding=16, style="TFrame")
+        container = ttk.Frame(self.root, padding=0, style="TFrame")
         container.pack(fill="both", expand=True)
 
-        header_row = ttk.Frame(container, style="TFrame")
+        header_row = ttk.Frame(container, padding=(18, 14), style="Header.TFrame")
         header_row.pack(fill="x")
 
-        self.logo_label = ttk.Label(header_row, style="TLabel")
-        self.logo_label.pack(side="left", anchor="n", padx=(0, 12))
+        self.logo_label = ttk.Label(header_row, style="HeaderLogo.TLabel")
+        self.logo_label.pack(side="left", anchor="n", padx=(0, 16))
         self._load_ui_logo()
 
-        header_text = ttk.Frame(header_row, style="TFrame")
+        header_text = ttk.Frame(header_row, style="Header.TFrame")
         header_text.pack(side="left", fill="x", expand=True)
 
         self.title_label = ttk.Label(
             header_text,
             text=self.t("window_title"),
             font=("Segoe UI", 18, "bold"),
+            style="HeaderTitle.TLabel",
         )
         self.title_label.pack(anchor="w")
         self.subtitle_label = ttk.Label(
             header_text,
             text=self.t("subtitle"),
-            style="Muted.TLabel",
+            style="HeaderMuted.TLabel",
         )
-        self.subtitle_label.pack(anchor="w", pady=(4, 14))
+        self.subtitle_label.pack(anchor="w", pady=(4, 0))
 
-        quick_actions = ttk.Frame(container, style="TFrame")
-        quick_actions.pack(fill="x", pady=(0, 14))
-        self.generate_button_top = ttk.Button(
+        quick_actions = ttk.Frame(header_row, style="Header.TFrame")
+        quick_actions.pack(side="right", padx=(18, 0))
+        self.quick_hint_label = ttk.Label(
             quick_actions,
+            text=self.t("quick_hint"),
+            style="HeaderMuted.TLabel",
+        )
+        self.quick_hint_label.pack(anchor="e", pady=(0, 7))
+
+        action_buttons = ttk.Frame(quick_actions, style="Header.TFrame")
+        action_buttons.pack(anchor="e")
+        self.generate_button_top = ttk.Button(
+            action_buttons,
             text=self.t("generate_pdf"),
             command=self.generate_pdf,
             style="Primary.TButton",
         )
-        self.generate_button_top.pack(side="right")
+        self.generate_button_top.pack(side="right", anchor="e")
         self.reset_button_top = ttk.Button(
-            quick_actions,
+            action_buttons,
             text=self.t("reset_form"),
             command=self.reset_form,
+            style="HeaderSecondary.TButton",
         )
-        self.reset_button_top.pack(side="right", padx=(0, 8))
-        self.quick_hint_label = ttk.Label(
-            quick_actions,
-            text=self.t("quick_hint"),
-            style="Muted.TLabel",
-        )
-        self.quick_hint_label.pack(side="left")
+        self.reset_button_top.pack(side="right", padx=(0, 8), anchor="e")
         self.request_number_label = ttk.Label(
             quick_actions,
             textvariable=self.request_number_var,
-            style="Muted.TLabel",
+            style="HeaderRequest.TLabel",
             font=("Segoe UI", 10, "bold"),
         )
-        self.request_number_label.pack(side="left", padx=(18, 0))
+        self.request_number_label.pack(anchor="e", pady=(7, 0))
 
-        self.notebook = ttk.Notebook(container)
+        body = ttk.Frame(container, padding=(16, 14, 16, 16), style="TFrame")
+        body.pack(fill="both", expand=True)
+
+        self.notebook = ttk.Notebook(body)
         self.notebook.pack(fill="both", expand=True)
 
-        self.form_tab = ttk.Frame(self.notebook, padding=12, style="TFrame")
+        self.form_tab = ttk.Frame(self.notebook, padding=14, style="TFrame")
         self.language_tab = ttk.Frame(self.notebook, padding=18, style="TFrame")
         self.notebook.add(self.form_tab, text=self.t("tab_form"))
         self.notebook.add(self.language_tab, text=self.t("tab_language"))
@@ -697,7 +719,7 @@ class ProcurementApp:
         self._build_language_tab()
 
     def _load_ui_logo(self) -> None:
-        logo_path = resource_path("assets/logo_tecnidro_dark.png")
+        logo_path = resource_path("assets/logo_tecnidro.png")
         if not logo_path.exists():
             return
 
