@@ -45,6 +45,7 @@ dist\MiAppEscritorio.exe
 El contador se guarda en GitHub en `richiesta_counter.json`. El programa consulta ese archivo al abrir y reserva el siguiente numero directamente en el repositorio antes de generar cada PDF.
 La numeracion es anual: al cambiar de anio, vuelve automaticamente a `0001`.
 El numero reservado en GitHub se usa dentro del PDF y tambien en el nombre final del archivo.
+La aplicacion incluye un boton protegido por contrasena para modificar manualmente el proximo numero de richiesta en GitHub si hubo un error.
 
 Para actualizar el contador desde cualquier PC, el programa necesita un token GitHub con permiso de escritura sobre el repositorio. El token puede ir embebido dentro del `.exe` si existe `github_token.txt` al compilar. Como respaldo, tambien puede leerse desde la variable de entorno `RICHIESTA_GITHUB_TOKEN` o desde un archivo local `github_token.txt` junto al `.exe`. El programa no pide el token por pantalla.
 

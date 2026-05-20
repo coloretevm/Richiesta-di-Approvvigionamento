@@ -4,11 +4,12 @@ import sys
 import json
 import os
 import base64
+import hashlib
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
@@ -21,7 +22,7 @@ from reportlab.pdfgen import canvas
 
 
 APP_TITLE = "Richiesta di Approvvigionamento"
-APP_VERSION = "1.6"
+APP_VERSION = "1.7"
 TODAY = date.today()
 DATE_TEXT = TODAY.strftime("%d/%m/%Y")
 OUTPUT_DATE_TEXT = TODAY.strftime("%d-%m-%Y")
@@ -33,6 +34,7 @@ GITHUB_REPO = "Richiesta-di-Approvvigionamento"
 GITHUB_BRANCH = "main"
 GITHUB_TOKEN_ENV = "RICHIESTA_GITHUB_TOKEN"
 GITHUB_TOKEN_FILE = "github_token.txt"
+COUNTER_ADMIN_PASSWORD_HASH = "65f2099f216d2928d0f145e82ca8bf4580d8b9cf0878abc63d9ad239304afafa"
 GITHUB_COUNTER_API_URL = (
     f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/contents/{COUNTER_FILE}"
 )
@@ -90,6 +92,7 @@ UI_TEXTS = {
         "request_number_error": "Richiesta: N. no disponible",
         "generate_pdf": "Generar PDF",
         "reset_form": "Limpiar formulario",
+        "counter_admin_button": "Modificar N. richiesta",
         "section_top": "Parte superior",
         "section_detail": "Particolare",
         "section_materials": "Distinta",
@@ -125,6 +128,12 @@ UI_TEXTS = {
         "github_token_missing": "Falta el token de GitHub. Coloca `github_token.txt` junto al .exe o configura la variable `RICHIESTA_GITHUB_TOKEN`.",
         "github_counter_error": "No se pudo reservar el número en GitHub.\n\n{error}",
         "github_reserving": "Reservando número de richiesta en GitHub...",
+        "counter_password_title": "Modificar número richiesta",
+        "counter_password_prompt": "Contraseña:",
+        "counter_password_error": "Contraseña incorrecta.",
+        "counter_number_title": "Nuevo número richiesta",
+        "counter_number_prompt": "Próximo número de richiesta:",
+        "counter_update_ok": "Número de richiesta actualizado en GitHub: N. {number}",
         "columns": ["Descripción", "Cant.", "Entrega requerida", "Orden n. del"],
     },
     "it": {
@@ -141,6 +150,7 @@ UI_TEXTS = {
         "request_number_error": "Richiesta: N. non disponibile",
         "generate_pdf": "Genera PDF",
         "reset_form": "Pulisci modulo",
+        "counter_admin_button": "Modifica N. richiesta",
         "section_top": "Parte superiore",
         "section_detail": "Particolare",
         "section_materials": "Distinta",
@@ -176,6 +186,12 @@ UI_TEXTS = {
         "github_token_missing": "Token GitHub mancante. Metti `github_token.txt` accanto al .exe oppure configura la variabile `RICHIESTA_GITHUB_TOKEN`.",
         "github_counter_error": "Impossibile prenotare il numero su GitHub.\n\n{error}",
         "github_reserving": "Prenotazione del numero richiesta su GitHub...",
+        "counter_password_title": "Modifica numero richiesta",
+        "counter_password_prompt": "Password:",
+        "counter_password_error": "Password non corretta.",
+        "counter_number_title": "Nuovo numero richiesta",
+        "counter_number_prompt": "Prossimo numero richiesta:",
+        "counter_update_ok": "Numero richiesta aggiornato su GitHub: N. {number}",
         "columns": ["Descrizione", "Q.t.", "Consegna richiesta", "Ordine n. del"],
     },
     "en": {
@@ -192,6 +208,7 @@ UI_TEXTS = {
         "request_number_error": "Request: No. unavailable",
         "generate_pdf": "Generate PDF",
         "reset_form": "Clear form",
+        "counter_admin_button": "Edit request no.",
         "section_top": "Top section",
         "section_detail": "Particolare",
         "section_materials": "Distinta",
@@ -227,6 +244,12 @@ UI_TEXTS = {
         "github_token_missing": "Missing GitHub token. Put `github_token.txt` next to the .exe or configure `RICHIESTA_GITHUB_TOKEN`.",
         "github_counter_error": "Could not reserve the request number on GitHub.\n\n{error}",
         "github_reserving": "Reserving request number on GitHub...",
+        "counter_password_title": "Edit request number",
+        "counter_password_prompt": "Password:",
+        "counter_password_error": "Incorrect password.",
+        "counter_number_title": "New request number",
+        "counter_number_prompt": "Next request number:",
+        "counter_update_ok": "Request number updated on GitHub: No. {number}",
         "columns": ["Description", "Qty.", "Requested delivery", "Order no. / date"],
     },
 }
@@ -382,10 +405,15 @@ def load_next_request_number() -> int:
     return int(counter.get("next_number", 1) or 1)
 
 
-def save_github_counter(counter: dict[str, object], sha: str | None, token: str) -> None:
+def save_github_counter(
+    counter: dict[str, object],
+    sha: str | None,
+    token: str,
+    message: str,
+) -> None:
     content = json.dumps(counter, indent=2, ensure_ascii=False) + "\n"
     payload: dict[str, object] = {
-        "message": f"Reserve richiesta {counter.get('year')} N. {format_request_number(int(counter.get('next_number', 1)) - 1)}",
+        "message": message,
         "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
         "branch": GITHUB_BRANCH,
     }
@@ -410,13 +438,27 @@ def reserve_next_request_number(token: str) -> int:
         next_counter["updated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
         next_counter["updated_by"] = os.environ.get("COMPUTERNAME", "").strip() or os.environ.get("USERNAME", "").strip()
         try:
-            save_github_counter(next_counter, sha, token)
+            message = f"Reserve richiesta {CURRENT_YEAR} N. {format_request_number(reserved_number)}"
+            save_github_counter(next_counter, sha, token, message)
             return reserved_number
         except RuntimeError as exc:
             if "GitHub HTTP 409" in str(exc):
                 continue
             raise
     raise RuntimeError("GitHub ha ricevuto aggiornamenti simultanei. Riprova tra qualche secondo.")
+
+
+def set_next_request_number(token: str, next_number: int) -> None:
+    if not token:
+        raise RuntimeError("GitHub token mancante.")
+    counter, sha = fetch_github_counter(token)
+    updated_counter = dict(counter)
+    updated_counter["year"] = CURRENT_YEAR
+    updated_counter["next_number"] = max(1, int(next_number))
+    updated_counter["updated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    updated_counter["updated_by"] = os.environ.get("COMPUTERNAME", "").strip() or os.environ.get("USERNAME", "").strip()
+    message = f"Set richiesta counter {CURRENT_YEAR} N. {format_request_number(int(updated_counter['next_number']))}"
+    save_github_counter(updated_counter, sha, token, message)
 
 
 def default_pdf_filename(request_number: int) -> str:
@@ -774,6 +816,13 @@ class ProcurementApp:
         actions.pack(fill="x", pady=(12, 0))
         self.reset_button_bottom = ttk.Button(actions, text=self.t("reset_form"), command=self.reset_form)
         self.reset_button_bottom.pack(side="right")
+        self.counter_admin_button = ttk.Button(
+            actions,
+            text=self.t("counter_admin_button"),
+            command=self.change_request_number,
+            style="Secondary.TButton",
+        )
+        self.counter_admin_button.pack(side="right", padx=(0, 8))
 
         self.status_label = ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel")
         self.status_label.pack(anchor="w", pady=(10, 0))
@@ -821,6 +870,7 @@ class ProcurementApp:
         self.generate_button_top.configure(text=self.t("generate_pdf"))
         self.reset_button_top.configure(text=self.t("reset_form"))
         self.reset_button_bottom.configure(text=self.t("reset_form"))
+        self.counter_admin_button.configure(text=self.t("counter_admin_button"))
         self.main_section.configure(text=self.t("section_top"))
         self.detail_section.configure(text=self.t("section_detail"))
         self.materials_section.configure(text=self.t("section_materials"))
@@ -864,6 +914,56 @@ class ProcurementApp:
 
     def _get_github_token(self) -> str:
         return load_github_token()
+
+    def _check_counter_password(self, password: str) -> bool:
+        digest = hashlib.sha256(password.encode("utf-8")).hexdigest()
+        return digest == COUNTER_ADMIN_PASSWORD_HASH
+
+    def change_request_number(self) -> None:
+        password = simpledialog.askstring(
+            self.t("counter_password_title"),
+            self.t("counter_password_prompt"),
+            parent=self.root,
+            show="*",
+        )
+        if password is None:
+            return
+        if not self._check_counter_password(password):
+            messagebox.showerror(self.t("app_title"), self.t("counter_password_error"))
+            return
+
+        try:
+            current_number = load_next_request_number()
+        except Exception:
+            current_number = 1
+
+        next_number = simpledialog.askinteger(
+            self.t("counter_number_title"),
+            self.t("counter_number_prompt"),
+            parent=self.root,
+            minvalue=1,
+            maxvalue=9999,
+            initialvalue=current_number,
+        )
+        if next_number is None:
+            return
+
+        token = self._get_github_token()
+        if not token:
+            messagebox.showerror(self.t("app_title"), self.t("github_token_missing"))
+            return
+
+        try:
+            set_next_request_number(token, next_number)
+        except Exception as exc:
+            messagebox.showerror(self.t("app_title"), self.t("github_counter_error", error=exc))
+            self._refresh_request_number_label()
+            return
+
+        self._refresh_request_number_label()
+        number_text = format_request_number(next_number)
+        self.status_var.set(self.t("counter_update_ok", number=number_text))
+        messagebox.showinfo(self.t("app_title"), self.t("counter_update_ok", number=number_text))
 
     def _refresh_dynamic_fields(self) -> None:
         main_needs_text = self.main_option_var.get() in {"commessa", "altro"}

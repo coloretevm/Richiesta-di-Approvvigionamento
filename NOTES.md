@@ -1,5 +1,11 @@
 # Notes
 
+## Version 1.7 - 2026-05-20
+
+- Added a password-protected button to manually set the next richiesta number in GitHub.
+- This lets an administrator restore a number after a mistaken request.
+- The manual update uses the same GitHub shared counter, so all PCs see the new value.
+
 ## Version 1.6 - 2026-05-13
 
 - Reset the shared request counter to `0001`.
